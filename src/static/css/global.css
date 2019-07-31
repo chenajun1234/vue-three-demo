@@ -1,0 +1,13 @@
+@charset "UTF-8";
+/**
+ * 
+ * @authors 陈俊
+ * @date    2017-11-13 23:26:56
+ * @version $Id$
+ */
+body{
+	background-color:white;
+}
+.tmpl{
+	margin-bottom: 50px;
+}
