@@ -170,13 +170,12 @@ export default {
     animate() {     
      //this.controls.update();
       this.render();
-      this.stats.update();  
-      if(this.camera.near>200){
-        this.camera.near-=1;
-      }else{
-        this.camera.near+=1;
+      this.stats.update(); 
+     if(this.camera.near=0.1){
+        this.camera.near+=100;
+        this.camera.updateProjectionMatrix();
       }      
-      this.camera.updateProjectionMatrix();
+      
       requestAnimationFrame(this.animate);
     }
   }
