@@ -46,9 +46,6 @@ export default {
   },
   mounted() {
     this.initGui();
-    // 假设你将要画一个圆或者画一条线，而不是一个线框模型，或者说不是一个Mesh（网格）。
-    // 第一步我们要做的，是设置好renderer（渲染器）、scene（场景）和camera（相机）-
-    // （如果对这里所提到的东西，还不了解，请阅读本手册第一章“创建一个场景 - Creating a scene”）。
     let mapEle = document.getElementById("map");
     let width = mapEle.clientWidth;
     let height = mapEle.clientHeight;

@@ -22,7 +22,11 @@ import DirectionalLight_14 from './components/example/14_DirectionalLight.vue';
 import HemisphereLight_15 from './components/example/15_HemisphereLight.vue';
 import RectAreaLight_16 from './components/example/16_RectAreaLight.vue';
 import RectAreaLight02_17 from './components/example/17_RectAreaLight02.vue';
-
+import FlyControls_18 from './components/example/18_FlyControls.vue';
+import LensFlare_19 from './components/example/19_LensFlare.vue';
+import MeshBasicMaterial_20 from './components/example/20_MeshBasicMaterial.vue';
+import MeshDepthMaterial_21 from './components/example/21_MeshDepthMaterial.vue';
+import MeshDepthMaterial02_22 from './components/example/22_MeshDepthMaterial_02.vue';
 
 //路由
 import VueRouter from 'vue-router';
@@ -63,11 +67,14 @@ let router = new VueRouter({
         { name: 'SpotLight', CNName: '13_聚光灯光源', path: '/spotLight', component: SpotLight_13 },
         { name: 'DirectionalLight', CNName: '14_平行光光源', path: '/directionalLight', component: DirectionalLight_14 },
         { name: 'HemisphereLight', CNName: '15_户外光照光源', path: '/hemisphereLight', component: HemisphereLight_15 },
-        { name: 'RectAreaLight', CNName: '15_窗口射入光线模拟', path: '/rectAreaLight', component: RectAreaLight_16 },
-        { name: 'RectAreaLight02', CNName: '15_窗口射入光线模拟(官方demo)', path: '/rectAreaLight02', component: RectAreaLight02_17 }
+        { name: 'RectAreaLight', CNName: '16_窗口射入光线模拟', path: '/rectAreaLight', component: RectAreaLight_16 },
+        { name: 'RectAreaLight02', CNName: '17_窗口射入光线模拟', path: '/rectAreaLight02', component: RectAreaLight02_17 },
+        { name: 'FlyControls', CNName: '18_相机飞行控件', path: '/flyControls', component: FlyControls_18 },
+        { name: 'LensFlare', CNName: '19_镜头光晕效果', path: '/lensFlare', component: LensFlare_19 },
+        { name: 'MeshBasicMaterial', CNName: '20_简单基础材质', path: '/meshBasicMaterial', component: MeshBasicMaterial_20 },
+        { name: 'MeshDepthMaterial', CNName: '21_网格深度材质', path: '/meshDepthMaterial', component: MeshDepthMaterial_21 },       
+        { name: 'MeshDepthMaterial02', CNName: '21_网格深度材质02', path: '/meshDepthMaterial02', component: MeshDepthMaterial02_22 }  
         
-        
-
     ]
 
 })

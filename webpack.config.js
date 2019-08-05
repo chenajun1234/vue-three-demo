@@ -67,7 +67,27 @@ module.exports={
 			{
 				test: require.resolve("three/examples/js/lights/RectAreaLightUniformsLib"),
 				use: "exports-loader?THREE.RectAreaLightUniformsLib"
+			},
+			{
+				test: require.resolve("three/examples/js/controls/FlyControls"),
+				use: "imports-loader?THREE=three"
+			},
+			{
+				test: require.resolve("three/examples/js/controls/FlyControls"),
+				use: "exports-loader?THREE.FlyControls"
+			},
+			{
+				test: require.resolve("three/examples/js/objects/Lensflare"),
+				use: "imports-loader?THREE=three"
+			},
+			{
+				test: require.resolve("three/examples/js/objects/Lensflare"),
+				use: "exports-loader?THREE.Lensflare"
 			}
+
+			
+
+			
 			
 		]
 	},

@@ -4,7 +4,7 @@
       <el-aside width="200px" style="background-color: rgb(238, 241, 246)">
         <el-menu
           :default-active="$route.path"
-          :default-openeds="['1']"
+          :default-openeds="['1','2','3']"
           :unique-opened="true"
           :router="true"
         >
@@ -18,6 +18,12 @@
           <el-submenu index="2">
             <template slot="title">three.js-灯光-demo</template>
             <template v-for="(item) in  lightRoutesList">
+              <el-menu-item :key="item.path" :index="item.path">{{ item.CNName }}</el-menu-item>
+            </template>
+          </el-submenu>
+          <el-submenu index="3">
+            <template slot="title">three.js-材质-demo</template>
+            <template v-for="(item) in  materialRoutesList">
               <el-menu-item :key="item.path" :index="item.path">{{ item.CNName }}</el-menu-item>
             </template>
           </el-submenu>
@@ -55,7 +61,8 @@ export default {
   data() {
     return {
       baseRoutesList: [],
-      lightRoutesList: []
+      lightRoutesList: [],//灯光
+      materialRoutesList: []//材质
     };
   },
   created() {
@@ -63,8 +70,11 @@ export default {
     for (let i = 0; i < lstRoutes.length; i++) {
       if (i < 12) {
         this.baseRoutesList.push(lstRoutes[i]);
-      } else {
+      } else if (i>=12 && i<=19){
         this.lightRoutesList.push(lstRoutes[i]);
+      }else{
+        console.log('序号:'+i);
+         this.materialRoutesList.push(lstRoutes[i]);
       }
     }
     // this.baseRoutesList=routerList;

@@ -5,8 +5,9 @@
   </div>
 </template>
 <script>
-//页面:环境光 
-//this.ambientLight = new THREE.AmbientLight("#111111");
+/*页面:MeshBasicMaterial是一种非常简单的材质，这种材质不考虑场景中光照的影响。
+使用这种材质的网格会被渲染成简单的平面多边形，而且也可以显示几何体的线框。
+   */
 
 import * as THREE from "three";
 //import "three-orbitcontrols";
@@ -20,7 +21,8 @@ export default {
       camera: null, //相机
       renderer: null, //渲染器
       ambientLight:null,
-      spotLight:null,
+      directionalLight:null,
+      meshMaterial:null,
       controls: null,
       stats: null,
       gui:null,
@@ -30,10 +32,6 @@ export default {
     };
   },
   mounted() {
-    this.initGui();
-    let mapEle = document.getElementById("map");
-    let width = mapEle.clientWidth;
-    let height = mapEle.clientHeight;
     window.vue = this;
     //场景
     this.initScene();
@@ -50,6 +48,7 @@ export default {
     this.initModel();
     this.initControls();
     this.initStats();
+    this.initGui();
     
     //渲染
     this.animate();
@@ -93,86 +92,103 @@ export default {
       this.ambientLight = new THREE.AmbientLight("#111111");
       this.scene.add(this.ambientLight);
       //创建一个平行光光源照射到物体上     
-      this.spotLight   = new THREE.SpotLight(0xffffff); //聚光灯
-      this.spotLight.position.set(15,30,10);
-      //告诉平行光需要开启阴影投射
-      this.spotLight.castShadow = true;
-      this.scene.add(this.spotLight);
+      this.directionalLight = new THREE.DirectionalLight("#ffffff");
+      this.directionalLight.position.set(-40, 60, -10);
+     this.directionalLight.shadow.camera.near = 20; //产生阴影的最近距离
+        this.directionalLight.shadow.camera.far = 200; //产生阴影的最远距离
+        this.directionalLight.shadow.camera.left = -50; //产生阴影距离位置的最左边位置
+        this.directionalLight.shadow.camera.right = 50; //最右边
+        this.directionalLight.shadow.camera.top = 50; //最上边
+        this.directionalLight.shadow.camera.bottom = -50; //最下面
 
-      this.debug = new THREE.CameraHelper(this.spotLight.shadow.camera);
+        //这两个值决定使用多少像素生成阴影 默认512
+        this.directionalLight.shadow.mapSize.height = 1024;
+        this.directionalLight.shadow.mapSize.width = 1024;
+
+        console.log(this.directionalLight);
+
+        //告诉平行光需要开启阴影投射
+        this.directionalLight.castShadow = true;
+
+
+      this.scene.add(this.directionalLight);
+
+      this.debug = new THREE.CameraHelper(this.directionalLight.shadow.camera);
+       this.debug.name = "debug";
       this.scene.add(this.debug);
     },
     initGui() {      
         //声明一个保存需求修改的相关数据的对象
         this.gui = {
-            ambientLight:"#111111", //环境光源
-            spotLight:"#ffffff", //点光源
-            lightY: 30, //灯光y轴的位置
-            distance:0, //点光源距离
-            intensity:1, //灯光强度
-            visible:true, //是否可见
-            angle:Math.PI/3,
-            castShadow:true,
-            exponent:30,
-            target:"plane",
-            debug:true
+            rotationSpeed: 0.02,
+            bouncingSpeed: 0.03,
+
+            opacity: window.vue.meshMaterial.opacity,
+            transparent: window.vue.meshMaterial.transparent,//是否透明
+            //当你使用THREE.CanvasRender时，多边形会被渲染得稍微大一点。当使用这个渲染器渲染的物体有间隙时，可以将这个属性设置为true
+            overdraw: window.vue.meshMaterial.overdraw,
+            visible: window.vue.meshMaterial.visible,
+            side: "front",
+            color: window.vue.meshMaterial.color.getStyle(),
+            wireframe: window.vue.meshMaterial.wireframe,//将几何体渲染为线框。默认值为false（即渲染为平面多边形）。
+            wireframeLinewidth: window.vue.meshMaterial.wireframeLinewidth,//控制线框宽度。默认值为1。
+            wireFrameLineJoin: window.vue.meshMaterial.wireframeLinejoin,//定义线连接节点的样式。可选值为 'round', 'bevel' 和 'miter'。默认值为 'round'。
         };
-        let datGui = new dat.GUI({autoPlace: false });
+        let datGui = new dat.GUI();
         let customContainer = document.getElementById('my-gui-container'); 
         customContainer.appendChild(datGui.domElement); 
-        datGui.addColor(this.gui,"ambientLight").onChange(function (e) {
-            window.vue.ambientLight.color = new THREE.Color(e);
+         var spGui = datGui.addFolder("Mesh");
+        spGui.add(this.gui, 'opacity', 0, 1).onChange(function (e) {
+            window.vue.meshMaterial.opacity = e
         });
-        datGui.addColor(this.gui,"spotLight").onChange(function (e) {
-            window.vue.spotLight.color = new THREE.Color(e);
+        spGui.add(this.gui, 'transparent').onChange(function (e) {
+            window.vue.meshMaterial.transparent = e
         });
-        datGui.add(this.gui, "lightY", 0, 100).onChange(function(e){
-            window.vue.spotLight.position.y = window.vue.gui.lightY;
+        spGui.add(this.gui, 'wireframe').onChange(function (e) {
+            window.vue.meshMaterial.wireframe = e
         });
-        datGui.add(this.gui,"distance",0,200).onChange(function (e) {
-            window.vue.spotLight.distance = e;//光源照射的距离。默认为0，这意味着光线的强度不会随着距离增加而减弱
+        spGui.add(this.gui, 'wireframeLinewidth', 0, 20).onChange(function (e) {
+            window.vue.meshMaterial.wireframeLinewidth = e
         });
-        datGui.add(this.gui,"intensity",0,5).onChange(function (e) {
-            window.vue.spotLight.intensity = e;//光源着色的强度，默认为1
+        spGui.add(this.gui, 'visible').onChange(function (e) {
+            window.vue.meshMaterial.visible = e
         });
-        datGui.add(this.gui,"visible").onChange(function (e) {
-            window.vue.spotLight.visible = e;//如果该属性设置为“true”（默认值），该光源就会打开，如果设置为“false”，该光源就会关闭
-        });
-        datGui.add(this.gui,"angle",0,Math.PI*2).onChange(function (e) {
-            window.vue.spotLight.angle = e;//光源发射出的光束的宽度。单位是弧度，默认值为Math.PI/3
-        });
-        datGui.add(this.gui,"castShadow").onChange(function (e) {
-            window.vue.spotLight.castShadow = e;//如果设置为true，这个光源就会产生阴影
-        });
-        datGui.add(this.gui,"exponent",0,100).onChange(function (e) {
-          /**使用THREE.SpotLight光源，发射的光线的强度随着光源距离的增加而减弱。
-           * exponent属性决定了光线前度递减的速度。使用低值，从光源发出的光线将到达远程的物体，
-           * 而使用高值，光线仅能到达非常接近THREE.SpotLight光源的物体 */
-            window.vue.spotLight.exponent = e;
-        });
-        datGui.add(this.gui,"debug").onChange(function (e) {
-            if(e){
-                window.vue.debug = new THREE.CameraHelper(window.vue.spotLight.shadow.camera);
-                window.vue.scene.add(window.vue.debug);
-            }else{
-                window.vue.scene.remove(window.vue.debug);
-            }
-        });
-      datGui.add(this.gui,"target",["plane","cube"]).onChange(function (e) {
-            switch (e){
-                case "plane":
-                    window.vue.spotLight.target = window.vue.plane;
+        spGui.add(this.gui, 'side', ["front", "back", "double"]).onChange(function (e) {
+            console.log(e);
+            switch (e) {
+                case "front":
+                    window.vue.meshMaterial.side = THREE.FrontSide;
                     break;
-                case "cube":
-                    window.vue.spotLight.target = window.vue.cube;
+                case "back":
+                    window.vue.meshMaterial.side = THREE.BackSide;
+                    break;
+                case "double":
+                    window.vue.meshMaterial.side = THREE.DoubleSide
                     break;
             }
+            window.vue.meshMaterial.needsUpdate = true;
+            console.log(window.vue.meshMaterial);
         });
+        spGui.addColor(this.gui, 'color').onChange(function (e) {
+            window.vue.meshMaterial.color.setStyle(e)
+        });
+
+        spGui.open();    
     },
     initModel() {
        //辅助工具
         var helper = new THREE.AxisHelper(10);
         this.scene.add(helper);
+
+         //球体
+        var sphereGeometry = new THREE.SphereGeometry(10, 30, 30);
+        this.meshMaterial = new THREE.MeshBasicMaterial({color: 0xaaafff});
+        var sphere = new THREE.Mesh(sphereGeometry, this.meshMaterial);
+        sphere.position.set(-20, 20, 0);
+
+        sphere.castShadow = true;
+
+        this.scene.add(sphere);
 
         //立方体
         var cubeGeometry = new THREE.CubeGeometry(10,10,10);
@@ -190,7 +206,7 @@ export default {
         this.scene.add(this.cube);
 
         //底部平面
-        var planeGeometry = new THREE.PlaneGeometry(100, 100);
+        var planeGeometry = new THREE.PlaneGeometry(5000, 5000, 20, 20);
         var planeMaterial = new THREE.MeshLambertMaterial({color: 0xaaaaaa});
 
         this.plane = new THREE.Mesh(planeGeometry, planeMaterial);

@@ -5,13 +5,16 @@
   </div>
 </template>
 <script>
-//页面:环境光 
-//this.ambientLight = new THREE.AmbientLight("#111111");
+//页面:镜头光晕效果
+/**直接朝着太阳或者一个非常明亮的灯光的时候就会出现镜头光晕效果。大多数情况会避免这种效果，
+ * 但是如果对于游戏或者三维图形来说，它提供了一种很好的效果，让场景看上去更加真实。
+   */
 
 import * as THREE from "three";
 //import "three-orbitcontrols";
 import Stats from "stats-js";
 import OrbitControls from "three/examples/js/controls/OrbitControls";
+import { Lensflare, LensflareElement } from "three/examples/js/objects/Lensflare";
 import * as dat from 'dat.gui';
 export default {
   data() {
@@ -20,7 +23,7 @@ export default {
       camera: null, //相机
       renderer: null, //渲染器
       ambientLight:null,
-      spotLight:null,
+      pointLight:null,
       controls: null,
       stats: null,
       gui:null,
@@ -31,6 +34,9 @@ export default {
   },
   mounted() {
     this.initGui();
+    // 假设你将要画一个圆或者画一条线，而不是一个线框模型，或者说不是一个Mesh（网格）。
+    // 第一步我们要做的，是设置好renderer（渲染器）、scene（场景）和camera（相机）-
+    // （如果对这里所提到的东西，还不了解，请阅读本手册第一章“创建一个场景 - Creating a scene”）。
     let mapEle = document.getElementById("map");
     let width = mapEle.clientWidth;
     let height = mapEle.clientHeight;
@@ -69,9 +75,9 @@ export default {
       // aspect,第二个属性设置的是相机拍摄面的长宽比（aspect ratio）。我们几乎总是会使用元素的宽除以高，否则会出现挤压变形。
       // near,接下来的2个属性是近裁剪面（near clipping plane）
       // far,远裁剪面（far clipping plane）
-      this.camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
-      this.camera.position.set(0, 40, 100);
-      this.camera.lookAt(new THREE.Vector3(0, 0, 0)); //指的是相机观察的目标点
+      this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      this.camera.position.set(400, -600, 100);
+      this.camera.lookAt(new THREE.Vector3(-400, 600, -100)); //指的是相机观察的目标点
     },
     initRender() {
       let mapEle = document.getElementById("map");
@@ -85,6 +91,10 @@ export default {
       //告诉渲染器需要阴影效果
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 默认的是，没有设置的这个清晰 THREE.PCFShadowMap
+      //设置颜色及其透明度
+       this.renderer.setClearColor(0x111111);
+        this.renderer.gammaInput = true;
+        this.renderer.gammaOutput = true;
       //将渲染器放置到指定dom当中
       mapEle.appendChild(this.renderer.domElement);
     },
@@ -93,86 +103,56 @@ export default {
       this.ambientLight = new THREE.AmbientLight("#111111");
       this.scene.add(this.ambientLight);
       //创建一个平行光光源照射到物体上     
-      this.spotLight   = new THREE.SpotLight(0xffffff); //聚光灯
-      this.spotLight.position.set(15,30,10);
-      //告诉平行光需要开启阴影投射
-      this.spotLight.castShadow = true;
-      this.scene.add(this.spotLight);
+      this.pointLight  = new THREE.PointLight("#ffffff");
+      this.pointLight .position.set(-400, 600, -100);  
+        //告诉平行光需要开启阴影投射
+        this.pointLight.castShadow = true;
+      this.scene.add(this.pointLight);
 
-      this.debug = new THREE.CameraHelper(this.spotLight.shadow.camera);
-      this.scene.add(this.debug);
+       // 添加 lens flares
+        var textureLoader = new THREE.TextureLoader();
+
+        var textureFlare0 = textureLoader.load("/src/static/textures/lensflare/lensflare0.png");
+        var textureFlare2 = textureLoader.load("/src/static/textures/lensflare/lensflare2.png");
+        var textureFlare3 = textureLoader.load("/src/static/textures/lensflare/lensflare3.png");
+
+        var flareColor = new THREE.Color(0xffffff);
+        flareColor.setHSL(0.55, 0.9, 1.0);
+
+        this.lensFlare = new THREE.Lensflare();
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare0, 500, 0.0, flareColor) );
+
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare2, 512, 0.0) );
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare2, 512, 0.0) );
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare2, 512, 0.0) );
+
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare3, 60, 0.6) );
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare3, 70, 0.7) );
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare3, 120, 0.9) );
+        this.lensFlare.addElement( new THREE.LensflareElement(textureFlare3, 70, 1.0) );
+
+        this.lensFlare.position.copy(this.pointLight.position);
+
+        this.scene.add(this.lensFlare);
     },
     initGui() {      
-        //声明一个保存需求修改的相关数据的对象
-        this.gui = {
-            ambientLight:"#111111", //环境光源
-            spotLight:"#ffffff", //点光源
-            lightY: 30, //灯光y轴的位置
-            distance:0, //点光源距离
-            intensity:1, //灯光强度
-            visible:true, //是否可见
-            angle:Math.PI/3,
-            castShadow:true,
-            exponent:30,
-            target:"plane",
-            debug:true
-        };
-        let datGui = new dat.GUI({autoPlace: false });
-        let customContainer = document.getElementById('my-gui-container'); 
-        customContainer.appendChild(datGui.domElement); 
-        datGui.addColor(this.gui,"ambientLight").onChange(function (e) {
-            window.vue.ambientLight.color = new THREE.Color(e);
-        });
-        datGui.addColor(this.gui,"spotLight").onChange(function (e) {
-            window.vue.spotLight.color = new THREE.Color(e);
-        });
-        datGui.add(this.gui, "lightY", 0, 100).onChange(function(e){
-            window.vue.spotLight.position.y = window.vue.gui.lightY;
-        });
-        datGui.add(this.gui,"distance",0,200).onChange(function (e) {
-            window.vue.spotLight.distance = e;//光源照射的距离。默认为0，这意味着光线的强度不会随着距离增加而减弱
-        });
-        datGui.add(this.gui,"intensity",0,5).onChange(function (e) {
-            window.vue.spotLight.intensity = e;//光源着色的强度，默认为1
-        });
-        datGui.add(this.gui,"visible").onChange(function (e) {
-            window.vue.spotLight.visible = e;//如果该属性设置为“true”（默认值），该光源就会打开，如果设置为“false”，该光源就会关闭
-        });
-        datGui.add(this.gui,"angle",0,Math.PI*2).onChange(function (e) {
-            window.vue.spotLight.angle = e;//光源发射出的光束的宽度。单位是弧度，默认值为Math.PI/3
-        });
-        datGui.add(this.gui,"castShadow").onChange(function (e) {
-            window.vue.spotLight.castShadow = e;//如果设置为true，这个光源就会产生阴影
-        });
-        datGui.add(this.gui,"exponent",0,100).onChange(function (e) {
-          /**使用THREE.SpotLight光源，发射的光线的强度随着光源距离的增加而减弱。
-           * exponent属性决定了光线前度递减的速度。使用低值，从光源发出的光线将到达远程的物体，
-           * 而使用高值，光线仅能到达非常接近THREE.SpotLight光源的物体 */
-            window.vue.spotLight.exponent = e;
-        });
-        datGui.add(this.gui,"debug").onChange(function (e) {
-            if(e){
-                window.vue.debug = new THREE.CameraHelper(window.vue.spotLight.shadow.camera);
-                window.vue.scene.add(window.vue.debug);
-            }else{
-                window.vue.scene.remove(window.vue.debug);
-            }
-        });
-      datGui.add(this.gui,"target",["plane","cube"]).onChange(function (e) {
-            switch (e){
-                case "plane":
-                    window.vue.spotLight.target = window.vue.plane;
-                    break;
-                case "cube":
-                    window.vue.spotLight.target = window.vue.cube;
-                    break;
-            }
-        });
+       
     },
     initModel() {
        //辅助工具
         var helper = new THREE.AxisHelper(10);
         this.scene.add(helper);
+
+         //球体
+        var sphereGeometry = new THREE.SphereGeometry(10,30,30);
+        var sphereMaterial = new THREE.MeshStandardMaterial({color:0xff00ff});
+        var sphere = new THREE.Mesh(sphereGeometry,sphereMaterial);
+        sphere.position.set(-20,20,0);
+
+        sphere.castShadow = true;
+
+        this.scene.add(sphere);
+
 
         //立方体
         var cubeGeometry = new THREE.CubeGeometry(10,10,10);
@@ -216,11 +196,11 @@ export default {
       //是否可以缩放
       this.controls.enableZoom = true;
       //是否自动旋转
-     // this.controls.autoRotate = true;
+      this.controls.autoRotate = true;
       //设置相机距离原点的最远距离
-      this.controls.minDistance = 100;
+      this.controls.minDistance = 1;
       //设置相机距离原点的最远距离
-      this.controls.maxDistance = 800;
+      this.controls.maxDistance = 200;
       //是否开启右键拖拽
       this.controls.enablePan = true;
 
