@@ -9,6 +9,12 @@
     其外观不是由光照或某个材质属性决定的，而是由物体到摄像机的距离决定的。可以将这种材质与其他材质结合使用，
     从而很容易地创建出逐渐消失的效果。摄像机的near属性和far属性之间的距离决定了场景的亮度和物体消失的速度。
     如果这个距离非常大，那么当物体远离摄像机时，只会稍微消失一点。如果这个距离非常小，那么物体消失的效果会非常明显。
+
+    <span>
+    发现80+的版本不支持这个，全部都是这个颜色，换了一个60的版本的three.js文件，没问题
+     高版本解决方法 this.camera.near+=1; this.camera.updateProjectionMatrix();
+    
+    <span>
    */
 
 import * as THREE from "three";
@@ -41,7 +47,7 @@ export default {
     this.initLight();
     //模型
     this.initModel();
-    //this.initControls();
+    this.initControls();
     this.initStats();
     this.initGui();
     
@@ -66,6 +72,7 @@ export default {
       this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
       this.camera.position.set(0, 40, 100);
       this.camera.lookAt(new THREE.Vector3(0, 0, 0)); //指的是相机观察的目标点
+      this.camera.updateProjectionMatrix();
     },
     initRender() {
       let mapEle = document.getElementById("map");
@@ -73,7 +80,8 @@ export default {
       let height = mapEle.clientHeight;
       this.renderer = new THREE.WebGLRenderer({
         antialias: true, //antialias（是否启用抗锯齿）
-        alpha:true//canvas是否包含alpha (透明度)。默认为 false
+        // alpha:true//canvas是否包含alpha (透明度)。默认为 false
+          logarithmicDepthBuffer: true 
       });
       //设置渲染器的尺寸
       this.renderer.setSize(width, height);
@@ -103,8 +111,7 @@ export default {
         //立方体
         var cube = new THREE.CubeGeometry(s, s, s);
         var material = new THREE.MeshDepthMaterial();     
-        for (var i = 0; i < 3000; i++) {
-
+        for (var i = 0; i < 1000; i++) {
             var mesh = new THREE.Mesh(cube, material);
 
             mesh.position.x = 800 * ( 2.0 * Math.random() - 1.0 );
@@ -135,7 +142,7 @@ export default {
       //是否可以缩放
       this.controls.enableZoom = true;
       //是否自动旋转
-     // this.controls.autoRotate = true;
+      //this.controls.autoRotate = true;
       //设置相机距离原点的最远距离
       this.controls.minDistance = 5;
       //设置相机距离原点的最远距离
@@ -163,7 +170,13 @@ export default {
     animate() {     
      //this.controls.update();
       this.render();
-      this.stats.update();   
+      this.stats.update();  
+      if(this.camera.near>200){
+        this.camera.near-=1;
+      }else{
+        this.camera.near+=1;
+      }      
+      this.camera.updateProjectionMatrix();
       requestAnimationFrame(this.animate);
     }
   }
