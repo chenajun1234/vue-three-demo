@@ -26,6 +26,7 @@ import FlyControls_18 from './components/example/18_FlyControls.vue';
 import LensFlare_19 from './components/example/19_LensFlare.vue';
 import MeshBasicMaterial_20 from './components/example/20_MeshBasicMaterial.vue';
 import MeshDepthMaterial_21 from './components/example/21_MeshDepthMaterial.vue';
+import MultiMaterialObject_22 from './components/example/22_MultiMaterialObject.vue';
 
 //路由
 import VueRouter from 'vue-router';
@@ -71,7 +72,9 @@ let router = new VueRouter({
         { name: 'FlyControls', CNName: '18_相机飞行控件', path: '/flyControls', component: FlyControls_18 },
         { name: 'LensFlare', CNName: '19_镜头光晕效果', path: '/lensFlare', component: LensFlare_19 },
         { name: 'MeshBasicMaterial', CNName: '20_简单基础材质', path: '/meshBasicMaterial', component: MeshBasicMaterial_20 },
-        { name: 'MeshDepthMaterial', CNName: '21_网格深度材质', path: '/meshDepthMaterial', component: MeshDepthMaterial_21 } 
+        { name: 'MeshDepthMaterial', CNName: '21_网格深度材质', path: '/meshDepthMaterial', component: MeshDepthMaterial_21 },
+        { name: 'MultiMaterialObject', CNName: '22_与深度材质融合', path: '/multiMaterialObject', component: MultiMaterialObject_22 } 
+        
         
     ]
 

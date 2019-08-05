@@ -20,6 +20,7 @@
 import * as THREE from "three";
 import Stats from "stats-js";
 import OrbitControls from "three/examples/js/controls/OrbitControls";
+//import sceneUtil from 'three/examples/js/utils/SceneUtils.js'
 import * as dat from 'dat.gui';
 export default {
   data() {
@@ -49,7 +50,7 @@ export default {
     this.initModel();
     this.initControls();
     this.initStats();
-    this.initGui();
+    //this.initGui();
     
     //渲染
     this.animate();
@@ -70,7 +71,7 @@ export default {
       // near,接下来的2个属性是近裁剪面（near clipping plane）
       // far,远裁剪面（far clipping plane）
       this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
-      this.camera.position.set(0, 40, 100);
+      this.camera.position.set(0, 40, 200);
       this.camera.lookAt(new THREE.Vector3(0, 0, 0)); //指的是相机观察的目标点
      // this.camera.updateProjectionMatrix();
     },
@@ -88,6 +89,7 @@ export default {
       //告诉渲染器需要阴影效果
      // this.renderer.shadowMap.enabled = true;
      // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 默认的是，没有设置的这个清晰 THREE.PCFShadowMap
+     // 0xffffff
       this.renderer.setClearColor(0x000000);
       //将渲染器放置到指定dom当中
       mapEle.appendChild(this.renderer.domElement);
@@ -97,11 +99,11 @@ export default {
     },
     initGui() {      
           //声明一个保存需求修改的相关数据的对象
-        var param = {
+       /* var param = {
 
         };
 
-        var gui = new dat.GUI();
+        var gui = new dat.GUI();*/
     },
     initModel() {
        //辅助工具
@@ -110,10 +112,22 @@ export default {
         var s = 25;
         //立方体
         var cube = new THREE.CubeGeometry(s, s, s);
-        var material = new THREE.MeshDepthMaterial();           
+        var cubeMaterial = new THREE.MeshDepthMaterial();
+        var colorMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, blending: THREE.MultiplyBlending});
+      
+       
         for (var i = 0; i < 1000; i++) {
-          var mesh = new THREE.Mesh(cube, material);       
+            var group = new THREE.Group();
+            let materials=[colorMaterial, cubeMaterial];
+            for ( let i = 0, l = materials.length; i < l; i ++ ) {
+              group.add( new THREE.Mesh( cube, materials[ i ] ) );
 
+            }
+          var mesh = group;
+         // debugger  
+         // var ss=sceneUtil;
+          //  var mesh =sceneUtil.createMultiMaterialObject(cube, [colorMaterial, cubeMaterial]);
+           mesh.children[1].scale.set(0.97, 0.97, 0.97);
 
             mesh.position.x = 800 * ( 2.0 * Math.random() - 1.0 );
             mesh.position.y = 800 * ( 2.0 * Math.random() - 1.0 );
@@ -172,10 +186,18 @@ export default {
      //this.controls.update();
       this.render();
       this.stats.update(); 
-     if(this.camera.near=0.1){
+    if(this.camera.near=0.1){
         this.camera.near+=100;
         this.camera.updateProjectionMatrix();
-      }       
+      }   
+      
+      //让立方体动起来
+       for(var i=0; i<this.scene.children.length; i++){
+            this.scene.children[i].rotation.x += 0.02;
+            this.scene.children[i].rotation.y += 0.02;
+            this.scene.children[i].rotation.z += 0.02;
+        }
+
       requestAnimationFrame(this.animate);
     }
   }
