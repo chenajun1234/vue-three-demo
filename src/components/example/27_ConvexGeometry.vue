@@ -1,36 +1,33 @@
 <template>
   <div>
     <div id="map"></div>
+    <div id="my-gui-container"></div>
   </div>
 </template>
 <script>
-/*页面:MeshDepthMaterial 网格深度材质
-    这个材质使用从摄像机到网格的距离来决定如何给网格上色
-    其外观不是由光照或某个材质属性决定的，而是由物体到摄像机的距离决定的。可以将这种材质与其他材质结合使用，
-    从而很容易地创建出逐渐消失的效果。摄像机的near属性和far属性之间的距离决定了场景的亮度和物体消失的速度。
-    如果这个距离非常大，那么当物体远离摄像机时，只会稍微消失一点。如果这个距离非常小，那么物体消失的效果会非常明显。
-
-    <span>
-    发现80+的版本不支持这个，全部都是这个颜色，换了一个60的版本的three.js文件，没问题
-     高版本解决方法 this.camera.near+=1; this.camera.updateProjectionMatrix();
-    
-    <span>
+/*页面:ConvexGeometry 
+    可以围绕一组点创建一个凸包。所谓凸包就是包围这组点的最小图形。也就是所有的点都在当前模型的体内，而且当前图形还是实现的体积最小的一个模型。
    */
 
 import * as THREE from "three";
 import Stats from "stats-js";
 import OrbitControls from "three/examples/js/controls/OrbitControls";
+import {ConvexBufferGeometry} from 'three/examples/jsm/geometries/ConvexGeometry';
 import {SceneUtils} from 'three/examples/jsm/utils/SceneUtils';
-import * as dat from 'dat.gui';
+import * as dat from "dat.gui";
 export default {
   data() {
     return {
       scene: null, //场景
       camera: null, //相机
       renderer: null, //渲染器
-      ambientLight:null,
-      directionalLight:null,
-      controls: null,    
+      ambientLight: null,
+      hemiLight: null,
+      Light: null,
+      controls: null,
+      gui: null,
+      line: null,
+      step:0
     };
   },
   mounted() {
@@ -51,14 +48,13 @@ export default {
     this.initControls();
     this.initStats();
     //this.initGui();
-    
+
     //渲染
     this.animate();
   },
   methods: {
     initScene() {
       this.scene = new THREE.Scene();
-     
     },
     initCamera() {
       let mapEle = document.getElementById("map");
@@ -71,9 +67,9 @@ export default {
       // near,接下来的2个属性是近裁剪面（near clipping plane）
       // far,远裁剪面（far clipping plane）
       this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 10000);
-      this.camera.position.set(0, 40, 200);
+      this.camera.position.set(0, 0, 600);
       this.camera.lookAt(new THREE.Vector3(0, 0, 0)); //指的是相机观察的目标点
-     // this.camera.updateProjectionMatrix();
+      // this.camera.updateProjectionMatrix();
     },
     initRender() {
       let mapEle = document.getElementById("map");
@@ -82,14 +78,14 @@ export default {
       this.renderer = new THREE.WebGLRenderer({
         antialias: true, //antialias（是否启用抗锯齿）
         // alpha:true//canvas是否包含alpha (透明度)。默认为 false
-          logarithmicDepthBuffer: true //是否使用对数深度缓存。如果要在单个场景中处理巨大的比例差异，就有必要使用。 默认是false。
+        logarithmicDepthBuffer: true //是否使用对数深度缓存。如果要在单个场景中处理巨大的比例差异，就有必要使用。 默认是false。
       });
       //设置渲染器的尺寸
       this.renderer.setSize(width, height);
       //告诉渲染器需要阴影效果
-     // this.renderer.shadowMap.enabled = true;
-     // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 默认的是，没有设置的这个清晰 THREE.PCFShadowMap
-     // 0xffffff
+      //this.renderer.shadowMap.enabled = true;
+      // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // 默认的是，没有设置的这个清晰 THREE.PCFShadowMap
+      // 0xffffff
       this.renderer.setClearColor(0x000000);
       //将渲染器放置到指定dom当中
       mapEle.appendChild(this.renderer.domElement);
@@ -97,51 +93,10 @@ export default {
     initLight() {
       
     },
-    initGui() {      
-          //声明一个保存需求修改的相关数据的对象
-       /* var param = {
-
-        };
-
-        var gui = new dat.GUI();*/
+    initGui() {
     },
     initModel() {
-       //辅助工具
-        var helper = new THREE.AxisHelper(10);
-        this.scene.add(helper);
-        var s = 25;
-        //立方体
-        var cube = new THREE.CubeGeometry(s, s, s);
-        var cubeMaterial = new THREE.MeshDepthMaterial();
-        var colorMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, blending: THREE.MultiplyBlending});
-      
-        
-       for (var i = 0; i < 1000; i++) {
-           /*  var group = new THREE.Group();
-            let materials=[colorMaterial, cubeMaterial];
-            for ( let i = 0, l = materials.length; i < l; i ++ ) {
-              group.add( new THREE.Mesh( cube, materials[ i ] ) );
-
-            }*/
-          var mesh = new  SceneUtils.createMultiMaterialObject(cube, [colorMaterial, cubeMaterial]);
-         // debugger  
-         // var ss=sceneUtil;
-          //  var mesh =sceneUtil.createMultiMaterialObject(cube, [colorMaterial, cubeMaterial]);
-           mesh.children[1].scale.set(0.97, 0.97, 0.97);
-
-            mesh.position.x = 800 * ( 2.0 * Math.random() - 1.0 );
-            mesh.position.y = 800 * ( 2.0 * Math.random() - 1.0 );
-            mesh.position.z = 800 * ( 2.0 * Math.random() - 1.0 );
-
-            mesh.rotation.x = Math.random() * Math.PI;
-            mesh.rotation.y = Math.random() * Math.PI;
-            mesh.rotation.z = Math.random() * Math.PI;
-
-            mesh.updateMatrix();
-
-            this.scene.add(mesh);
-
-        }
+     this.generatePoints();
     },
     initControls() {
       this.controls = new THREE.OrbitControls(
@@ -178,28 +133,68 @@ export default {
       document.getElementById("map").appendChild(statsPosition);
     },
     render() {
+       //设置模型动画
+       // this.line.rotation.z = this.step += 0.01;
+       // this.line.rotation.y = this.step += 0.01;
       //渲染图形
-
       this.renderer.render(this.scene, this.camera);
     },
-    animate() {     
-     //this.controls.update();
+    animate() {
+      this.controls.update();
       this.render();
-      this.stats.update(); 
-    if(this.camera.near=0.1){
-        this.camera.near+=100;
-        this.camera.updateProjectionMatrix();
-      }   
-      
-      //让立方体动起来
-       for(var i=0; i<this.scene.children.length; i++){
-            this.scene.children[i].rotation.x += 0.02;
-            this.scene.children[i].rotation.y += 0.02;
-            this.scene.children[i].rotation.z += 0.02;
-        }
+      this.stats.update();
 
       requestAnimationFrame(this.animate);
+    },
+    generatePoints() {
+        // 随机生成一组顶点
+        var points = [];
+        for (var i = 0; i < 20; i++) {
+            //xyz轴的坐标点的位置会随机生成在+-150以内
+            var randomX = -150 + Math.round(Math.random() * 300);
+            var randomY = -150 + Math.round(Math.random() * 300);
+            var randomZ = -150 + Math.round(Math.random() * 300);
+
+            //创建一个坐标点并添加到数组当中
+            points.push(new THREE.Vector3(randomX, randomY, randomZ));
+        }
+
+        //声明一个存放所有点的网格对象
+        let spGroup = new THREE.Object3D();
+        //声明一个网格基础材质
+        var material = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: false});
+        //遍历数组生成小球点并添加到对象当中
+        points.forEach(function (point) {
+
+            var spGeom = new THREE.SphereGeometry(2);
+            var spMesh = new THREE.Mesh(spGeom, material);
+            spMesh.position.copy(point); //将当前小球的位置设置为当前点的坐标
+            window.vue.scene.add(spMesh);
+        });
+        // 将存放所有点的对象添加到场景当中
+        this.scene.add(spGroup);
+
+        // 使用这些点实例化一个THREE.ConvexGeometry几何体对象
+        var hullGeometry = new ConvexBufferGeometry(points);
+        //生成模型
+        let hullMesh = this.createMesh(hullGeometry);
+        //添加到场景
+        this.scene.add(hullMesh);
+    }, 
+    createMesh(geom) {
+        // 实例化一个绿色的半透明的材质
+        var meshMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00, transparent: true, opacity: 0.2});
+        meshMaterial.side = THREE.DoubleSide; //将材质设置成正面反面都可见
+        var wireFrameMat = new THREE.MeshBasicMaterial();
+        wireFrameMat.wireframe = true; //把材质渲染成线框
+
+        // 将两种材质都赋给几何体
+        var mesh =new  SceneUtils.createMultiMaterialObject(geom, [meshMaterial, wireFrameMat]);
+
+        return mesh;
     }
+
+    
   }
 };
 </script>
@@ -212,4 +207,10 @@ export default {
   /* background-color: black; */
 }
 
+#my-gui-container {
+  position: absolute;
+  top: 10%;
+  right: 1.5%;
+  z-index: 100;
+}
 </style>

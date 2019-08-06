@@ -83,14 +83,6 @@ module.exports={
 			{
 				test: require.resolve("three/examples/js/objects/Lensflare"),
 				use: "exports-loader?THREE.Lensflare"
-			},
-			{
-				test: require.resolve("three/examples/js/utils/SceneUtils"),
-				use: "imports-loader?THREE=three"
-			},
-			{
-				test: require.resolve("three/examples/js/utils/SceneUtils"),
-				use: "exports-loader?THREE.SceneUtils"
 			}
 		]
 	},
