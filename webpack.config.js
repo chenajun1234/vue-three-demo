@@ -13,6 +13,7 @@ module.exports={
 		filename:'build.js'
 	},
 	module:{
+		unknownContextCritical: false,
 		loaders:[
 			{test: /\.json$/,loader: 'json-loader'},
 			{

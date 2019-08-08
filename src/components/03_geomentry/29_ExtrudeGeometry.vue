@@ -5,19 +5,20 @@
   </div>
 </template>
 <script>
-/*页面:LineBasicMaterial 网格深度材质 用于绘制虚线样式几何体的材质。
-    scale	线条中虚线部分的占比，缩放dashSize和gapSize。如果scale的值小于1，dashSize和gapSize就会增大；如果scale的值小于1，dashSize和gapSize就会减小
-    dashSize	破折号（-）的大小。默认为3。
-    gapSize	间隙的大小。默认为1
+/*页面:ExtrudeGeometry 这个对象将一个2D图形拉伸为一个3D几何体. 
+  new THREE.ExtrudeGeometry(shapes, options);
+   shapes拉伸几何体需要提供一个或多个图形（THREE.Shape对象）。请看上一节
+   options就是一写可以配置THREE.ExtrudeGeometry配置项，相关配置有：
    */
 
 import * as THREE from "three";
 import Stats from "stats-js";
 import OrbitControls from "three/examples/js/controls/OrbitControls";
-import { ConvexBufferGeometry } from "three/examples/jsm/geometries/ConvexGeometry";
+// import { ConvexBufferGeometry } from "three/examples/jsm/geometries/ConvexGeometry";
 import { SceneUtils } from "three/examples/jsm/utils/SceneUtils";
 import * as dat from "dat.gui";
 export default {
+  name:'ExtrudeGeometry',
   data() {
     return {
       scene: null, //场景
@@ -29,7 +30,8 @@ export default {
       controls: null,
       gui: null,
       line: null,
-      step: 0
+      step: 0,
+      shape:null
     };
   },
   mounted() {
@@ -49,7 +51,7 @@ export default {
     this.initModel();
     this.initControls();
     this.initStats();
-    //this.initGui();
+    this.initGui();
 
     //渲染
     this.animate();
@@ -99,13 +101,62 @@ export default {
       this.Light.position.set(1, 1, 1);
       this.scene.add(this.Light);
     },
-    initGui() {},
+    initGui() {
+      //声明一个保存需求修改的相关数据的对象
+        this.gui = {
+            amount:2,
+            bevelThickness:2,
+            bevelSize:0.5,
+            bevelEnabled:true,
+            bevelSegments:3,
+            curveSegments:12,
+            steps:1,
+            asGeom:function () {
+                // 删除旧的模型
+                if(this.shape){
+                  this.scene.remove(this.shape);
+                }
+                // 创建一个新的
+                var options = {
+                    amount: window.vue.gui.amount,//该属性指定图形可以拉多高（深度）。默认值为100
+                    bevelThickness: window.vue.gui.bevelThickness,//该属性指定斜角的深度。斜角是前后面和拉伸体之间的倒角。该值定义斜角进入图形的深度。默认值为6
+                    bevelSize: window.vue.gui.bevelSize,//该属性指定斜角的高度。这个高度将被加到图形的正常高度上。默认值为bevelThickness - 2
+                    bevelSegments: window.vue.gui.bevelSegments,//该属性定义斜角的分段数。分段数越多，曲线越平滑。默认值为3
+                    bevelEnabled: window.vue.gui.bevelEnabled,//如果这个属性设为true，就会有斜角。默认值为true
+                    curveSegments: window.vue.gui.curveSegments,//该属性指定拉伸体沿深度方向分成多少段。默认值为1。值越大，单个面越多
+                    steps: window.vue.gui.steps//该属性指定拉伸体沿深度方向分成多少段。默认值为1。值越大，单个面越多。
+                };
+                //拉伸图形
+                window.vue.shape = window.vue.createMesh(new THREE.ExtrudeGeometry(window.vue.drawShape(), options));
+                // 将模型添加到场景当中
+                window.vue.scene.add(window.vue.shape);
+            }
+        };
+        var datGui = new dat.GUI();
+        let customContainer = document.getElementById("my-gui-container");
+        customContainer.appendChild(datGui.domElement);
+        //将设置属性添加到gui当中，this.gui.add(对象，属性，最小值，最大值）
+        datGui.add(this.gui, 'amount', 0, 20).onChange(this.gui.asGeom);
+        datGui.add(this.gui, 'bevelThickness', 0, 10).onChange(this.gui.asGeom);
+        datGui.add(this.gui, 'bevelSize', 0, 10).onChange(this.gui.asGeom);
+        datGui.add(this.gui, 'bevelSegments', 0, 30).step(1).onChange(this.gui.asGeom);
+        datGui.add(this.gui, 'bevelEnabled').onChange(this.gui.asGeom);
+        datGui.add(this.gui, 'curveSegments', 1, 30).step(1).onChange(this.gui.asGeom);
+        datGui.add(this.gui, 'steps', 1, 5).step(1).onChange(this.gui.asGeom);
+
+        //调用生成一次图形
+        this.gui.asGeom();
+    },
     initModel() {
-      //博主demo
-      this.addShape()
-     //正方形
-    // this.drawImage();
-        
+      // var shape = new THREE.ShapeGeometry(this.drawShape());
+      // var material = new THREE.MeshPhongMaterial({ color: 0xff00ff });
+      // material.side = THREE.DoubleSide; //设置成两面都可见  
+      // var mesh = new THREE.Mesh(shape, material);
+      // this.scene.add(mesh);
+      // //此方法是创建两种纹理的方法
+      //   var shape = new THREE.ShapeGeometry(this.drawShape());
+      //   var mesh = this.createMesh(shape);
+      //   this.scene.add(mesh);
     },
     initControls() {
       this.controls = new THREE.OrbitControls(
@@ -155,17 +206,6 @@ export default {
 
       requestAnimationFrame(this.animate);
     },
-    addShape(){
-      var shape = new THREE.ShapeGeometry(this.drawShape());
-      var material = new THREE.MeshPhongMaterial({ color: 0xff00ff });
-      material.side = THREE.DoubleSide; //设置成两面都可见  
-      var mesh = new THREE.Mesh(shape, material);
-      this.scene.add(mesh);
-      //此方法是创建两种纹理的方法
-        var shape = new THREE.ShapeGeometry(this.drawShape());
-        var mesh = this.createMesh(shape);
-        this.scene.add(mesh);
-    },
     //生成2d图形
     drawShape() {
       // 实例化shape对象
@@ -208,45 +248,16 @@ export default {
       // 返回shape
       return shape;
     },
-    drawImage() {
-     // 实例化shape对象
-      var shape = new THREE.Shape();//使用路径以及可选的孔洞来定义一个二维形状平面。 它可以和ExtrudeGeometry、ShapeGeometry一起使用，获取点，或者获取三角面。
-
-      // 设置开始点的位置
-      shape.moveTo(0, 0);
-
-      // 从起始点绘制直线到当前位置
-      shape.lineTo(4000, 0);
-       shape.lineTo(4000, 4000);
-      shape.lineTo(0, 4000);
-      shape.lineTo(0, 0);
-      //设置一条曲线到30 40
-      //shape.bezierCurveTo(15, 25, -5, 25, -30, 40);
-
-      // 设置一条通过当前所有顶点的光滑曲线
-      /*shape.splineThru([
-        new THREE.Vector2(-22, 30),
-        new THREE.Vector2(-18, 20),
-        new THREE.Vector2(-20, 10)
-      ]);*/
-
-      // 设置曲线回到顶点
-     // shape.quadraticCurveTo(0, -15, 20, 10);
-
-    
-
-      let shapeGeometry=new THREE.ShapeGeometry(shape);
-
-       var map = new THREE.TextureLoader().load("/src/static/textures/万花.jpg");
-      let material=new THREE.MeshPhongMaterial({map: map});
-
-      var mesh = new THREE.Mesh(shapeGeometry, material);
-      this.scene.add(mesh);     
-      //this.camera.position.z=10000;
-    },
     createMesh(geom) {
+       //设置当前的模型矩阵沿y轴负方向偏移20
+        geom.applyMatrix(new THREE.Matrix4().makeTranslation(0, -20, 0));
       // 创建两个纹理
-      var meshMaterial = new THREE.MeshNormalMaterial();//一种把法向量映射到RGB颜色的材质。
+      //一种把法向量映射到RGB颜色的材质。
+      var meshMaterial = new THREE.MeshNormalMaterial({
+         flatShading: THREE.FlatShading,
+            transparent: true,
+            opacity: 0.7
+      });
       meshMaterial.side = THREE.DoubleSide; //两面都可见
       var wireFrameMat = new THREE.MeshBasicMaterial();
       wireFrameMat.wireframe = true; //打开线框
